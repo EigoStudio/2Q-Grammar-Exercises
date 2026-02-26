@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>20章 注意すべき関係詞 Part 2：複合関係詞マスター</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kosugi+Maru&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        :root {
+            --primary-pink: #ff80ab;
+            --dark-pink: #c94b7b;
+            --light-pink: #fce4ec;
+            --bg-white: #ffffff;
+            --text-black: #212121;
+            --wrong-red: #ff1744;
+            --correct-blue: #1e88e5;
+            --en-font: "Hiragino Maru Gothic ProN", "Hiragino Maru Gothic Pro", "Yu Gothic", "Meiryo", sans-serif;
+        }
+
+        body {
+            font-family: 'Kosugi Maru', var(--en-font);
+            background-color: var(--light-pink);
+            color: var(--text-black);
+            display: flex; flex-direction: column; align-items: center; padding: 10px; margin: 0;
+        }
+
+        header { text-align: center; margin-bottom: 15px; width: 100%; max-width: 900px; }
+        h1 { color: var(--dark-pink); margin: 10px 0; font-size: 1.5rem; }
+
+        .container { 
+            background: var(--bg-white); width: 98%; max-width: 800px; padding: 25px; 
+            border-radius: 25px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); text-align: center; box-sizing: border-box; 
+        }
+
+        .question-box { font-size: 1.3rem; font-weight: bold; margin: 15px 0; padding: 20px; background: #fafafa; border-radius: 15px; border: 2px solid var(--primary-pink); line-height: 1.6; min-height: 80px; transition: 0.3s; }
+        .question-box.solved { border-color: var(--correct-blue); background: #e3f2fd; color: var(--correct-blue); }
+
+        .judge-btns { display: flex; justify-content: center; gap: 25px; margin-bottom: 20px; }
+        .btn-judge { 
+            width: 110px; height: 110px; border-radius: 50%; border: 4px solid #eee; 
+            font-size: 1.8rem; font-weight: bold; cursor: pointer; transition: 0.2s; background: white;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .btn-ok { color: #4caf50; border-color: #4caf50; }
+        .btn-ng { color: var(--wrong-red); border-color: var(--wrong-red); }
+        .btn-judge:active { transform: scale(0.9); }
+
+        .result-text { font-weight: bold; font-size: 2rem; margin: 10px 0; min-height: 40px; }
+        
+        .correction-area { display: none; margin-top: 20px; animation: fadeIn 0.4s; }
+        .choice-btn { 
+            display: block; width: 100%; max-width: 450px; margin: 12px auto; padding: 15px; 
+            border: 2px solid #ffc1e3; border-radius: 30px; background: white; cursor: pointer; font-size: 1rem; font-family: inherit; font-weight: bold;
+        }
+        .choice-btn:hover { background: var(--light-pink); border-color: var(--primary-pink); }
+
+        .next-btn { 
+            display: none; background: var(--dark-pink); color: white; border: none; 
+            padding: 15px 50px; border-radius: 40px; font-size: 1.2rem; cursor: pointer; margin-top: 20px; box-shadow: 0 4px 0 #880e4f;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>20章 注意すべき関係詞 Part 2：複合関係詞</h1>
+    <div id="progress" style="font-size: 1rem; font-weight: bold; color: var(--dark-pink);">Question 1 / 14</div>
+</header>
+
+<div class="container">
+    <div id="resultMsg" class="result-text"></div>
+    <div id="questionText" class="question-box">Loading...</div>
+    
+    <div id="judgeArea" class="judge-btns">
+        <button class="btn-judge btn-ok" onclick="checkJudge(true)">OK</button>
+        <button class="btn-judge btn-ng" onclick="checkJudge(false)">×</button>
+    </div>
+
+    <div id="correctionArea" class="correction-area">
+        <p style="font-weight: bold; color: var(--dark-pink);">正しい修正を選んでください！</p>
+        <div id="choicesGrid"></div>
+    </div>
+
+    <button id="nextBtn" class="next-btn" onclick="nextQuestion()">Next →</button>
+</div>
+
+<script>
+const questions = [
+    { s: "Give the prize to whoever wins the race.", ans: true, correctS: "Give the prize to whoever wins the race. (名詞節：勝った人なら誰にでも)" },
+    { s: "Whatever happens, I will always support you.", ans: true, correctS: "Whatever happens, I will always support you. (譲歩の副詞節：何が起ころうとも)" },
+    { s: "However you are busy, you should get enough sleep.", ans: false, choices: ["However busy you are に変える", "Whatever busy you are に変える", "No matter what you are busy に変える"], correctPattern: "However busy you are に変える", correctS: "However busy you are, you should get enough sleep." },
+    { s: "You can take whichever you like.", ans: true, correctS: "You can take whichever you like. (名詞節：好きな方のどちらでも)" },
+    { s: "Whenever I visit her, she is out.", ans: true, correctS: "Whenever I visit her, she is out. (副詞節：〜する時はいつでも)" },
+    { s: "No matter who says so, don't believe it.", ans: true, correctS: "No matter who says so, don't believe it. (=Whoever says so)" },
+    { s: "I will follow you whenever you go.", ans: false, choices: ["wherever に変える", "however に変える", "no matter when に変える"], correctPattern: "wherever に変える", correctS: "I will follow you wherever you go. (どこへ行こうとも)" },
+    { s: "Whoever wants the ticket can have it.", ans: true, correctS: "Whoever wants the ticket can have it. (名詞節としての主語)" },
+    { s: "You should do it however you can.", ans: true, correctS: "You should do it however you can. (どのような方法で〜しても)" },
+    { s: "No matter what he says, don't change your mind.", ans: true, correctS: "No matter what he says, don't change your mind. (=Whatever he says)" },
+    { s: "Whatever of the two books you choose, you'll be satisfied.", ans: false, choices: ["Whichever に変える", "Whenever に変える", "No matter which books に変える"], correctPattern: "Whichever に変える", correctS: "Whichever of the two books you choose, you'll be satisfied." },
+    { s: "I'll give you whatever you want.", ans: true, correctS: "I'll give you whatever you want. (名詞節：欲しいものは何でも)" },
+    { s: "However late it is, I have to finish this work.", ans: true, correctS: "However late it is, I have to finish this work. (=No matter how late)" },
+    { s: "No matter when you come, you are welcome.", ans: true, correctS: "No matter when you come, you are welcome. (=Whenever you come)" }
+];
+
+let currentIdx = 0;
+
+function loadQuestion() {
+    const q = questions[currentIdx];
+    const qBox = document.getElementById('questionText');
+    qBox.classList.remove('solved');
+    document.getElementById('progress').textContent = `Question ${currentIdx + 1} / ${questions.length}`;
+    qBox.innerHTML = q.s;
+    document.getElementById('resultMsg').textContent = "";
+    document.getElementById('correctionArea').style.display = 'none';
+    document.getElementById('judgeArea').style.display = 'flex';
+    document.getElementById('nextBtn').style.display = 'none';
+}
+
+function checkJudge(userAns) {
+    const q = questions[currentIdx];
+    const msg = document.getElementById('resultMsg');
+    
+    if (userAns === q.ans) {
+        if (q.ans === true) {
+            showSuccess();
+        } else {
+            showCorrectionStep();
+        }
+    } else {
+        msg.style.color = 'var(--wrong-red)';
+        msg.textContent = "Wrong! Look closer.";
+    }
+}
+
+function showCorrectionStep() {
+    document.getElementById('judgeArea').style.display = 'none';
+    const area = document.getElementById('correctionArea');
+    const grid = document.getElementById('choicesGrid');
+    area.style.display = 'block';
+    grid.innerHTML = "";
+    
+    const q = questions[currentIdx];
+    const shuffledChoices = [...q.choices].sort(() => Math.random() - 0.5);
+    
+    shuffledChoices.forEach((choice) => {
+        const btn = document.createElement('button');
+        btn.className = 'choice-btn';
+        btn.textContent = choice;
+        btn.onclick = () => {
+            if (choice === q.correctPattern) {
+                showSuccess();
+            } else {
+                alert("その修正だとまだ文が不自然だよ。");
+            }
+        };
+        grid.appendChild(btn);
+    });
+}
+
+function showSuccess() {
+    const q = questions[currentIdx];
+    const qBox = document.getElementById('questionText');
+    
+    qBox.innerHTML = `✅ ${q.correctS}`;
+    qBox.classList.add('solved');
+    
+    confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#ff80ab', '#ffffff', '#c94b7b'] });
+    
+    const msg = document.getElementById('resultMsg');
+    msg.style.display = 'block';
+    msg.style.color = 'var(--correct-blue)';
+    msg.textContent = "Correct! ✨";
+
+    document.getElementById('correctionArea').style.display = 'none';
+    document.getElementById('judgeArea').style.display = 'none';
+    document.getElementById('nextBtn').style.display = 'inline-block';
+}
+
+function nextQuestion() {
+    currentIdx++;
+    if (currentIdx < questions.length) {
+        loadQuestion();
+    } else {
+        document.querySelector('.container').innerHTML = "<h2 style='color:var(--dark-pink);'>All Clear! 🏆</h2><p>複合関係詞の使い分け、完璧です！</p><button onclick='location.reload()' class='next-btn' style='display:inline-block;'>最初から挑戦する</button>";
+    }
+}
+
+window.onload = loadQuestion;
+</script>
+</body>
+</html>
