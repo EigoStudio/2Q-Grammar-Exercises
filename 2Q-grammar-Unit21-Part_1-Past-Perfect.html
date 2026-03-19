@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>21章 注意すべき完了形</title>
+    <link href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&family=Kosugi+Maru&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #fce4ec;
+            --primary-pink: #ff80ab;
+            --dark-pink: #c94b7b;
+            --text-black: #2c3e50;
+            --white: #ffffff;
+            --correct-green: #4caf50;
+            --wrong-red: #ff5252;
+        }
+
+        body {
+            font-family: 'Kosugi Maru', 'Andika', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-black);
+            margin: 0; padding: 20px;
+            display: flex; flex-direction: column; align-items: center;
+        }
+
+        header { text-align: center; margin-bottom: 20px; }
+        h1 { color: var(--dark-pink); font-size: 1.8rem; }
+
+        .container {
+            background: var(--white);
+            width: 95%; max-width: 700px;
+            padding: 30px; border-radius: 25px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .translation { font-size: 1.1rem; color: #666; margin-bottom: 10px; font-weight: bold; }
+        .sentence { font-size: 1.4rem; margin-bottom: 25px; line-height: 1.8; word-break: keep-all; }
+        .blank { 
+            display: inline-block; min-width: 150px; border-bottom: 2px solid var(--dark-pink); 
+            color: var(--dark-pink); padding: 0 5px; font-weight: bold;
+        }
+        .blank.correct { border-bottom: none; color: var(--correct-green); }
+
+        .explanation-box { 
+            display: none; 
+            font-size: 1rem; color: var(--correct-green); 
+            background: #e8f5e9; padding: 10px; border-radius: 10px;
+            margin-bottom: 20px; font-weight: bold;
+        }
+
+        .choices-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .choice-btn {
+            background: var(--white); border: 2px solid #ffc1e3;
+            padding: 15px; border-radius: 15px; font-size: 1.1rem;
+            cursor: pointer; transition: 0.2s; font-family: inherit;
+        }
+        .choice-btn:hover { background: #fff1f8; border-color: var(--primary-pink); }
+        .choice-btn.wrong { background: #ffebee; border-color: var(--wrong-red); color: var(--wrong-red); }
+
+        .next-btn {
+            display: none; background: var(--dark-pink); color: white;
+            border: none; padding: 15px 50px; border-radius: 30px;
+            font-size: 1.2rem; cursor: pointer; margin-top: 25px;
+        }
+
+        /* 印刷設定 (Cmd+P) */
+        @media print {
+            @page { size: A4; margin: 10mm; }
+            body { background: white; padding: 0; color: black; width: 100%; }
+            #quiz-ui, header { display: none !important; }
+            .print-only { display: block !important; width: 100%; }
+            .ws-title { font-size: 1.6rem; font-weight: bold; margin-bottom: 25px; text-align: center; color: black; }
+            .worksheet-item { text-align: left; margin-bottom: 35px; page-break-inside: avoid; color: black; }
+            .translation-ws { font-weight: bold; font-size: 1rem; margin-bottom: 12px; }
+            .sentence-ws { font-size: 1.25rem; line-height: 1.2; white-space: nowrap; }
+            .blank { min-width: 180px; border-bottom: 1.5px solid black !important; color: black; }
+        }
+        .print-only { display: none; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>21章 注意すべき完了形</h1>
+    <p id="progress">Question 1 / 15</p>
+</header>
+
+<div class="container" id="quiz-ui">
+    <div id="q-content">
+        <div class="translation" id="trans-text"></div>
+        <div class="sentence" id="sentence-text"></div>
+        <div class="explanation-box" id="explanation-text"></div>
+        <div class="choices-grid" id="choices-container"></div>
+    </div>
+    <button class="next-btn" id="next-button" onclick="nextQuestion()">Next →</button>
+</div>
+
+<div class="print-only" id="worksheet">
+    <div class="ws-title">21章 注意すべき完了形</div>
+    <div id="worksheet-list"></div>
+</div>
+
+<script>
+const questions = [
+    {
+        jp: "彼が来たとき、私は3時間ずっと本を読んでいた。",
+        en: "I <span class='blank'></span> a book for three hours when he came.",
+        ans: "had been reading",
+        options: ["have read", "had been reading", "read", "have been reading"],
+        explanation: "read (読む) / 過去のある時点までの動作の継続なので、過去完了進行形を使います。"
+    },
+    {
+        jp: "彼女が家に着いたとき、すでに雨がやんでいた。",
+        en: "The rain <span class='blank'></span> when she got home.",
+        ans: "had already stopped",
+        options: ["has already stopped", "had already stopped", "was stopping", "stops"],
+        explanation: "stop (やむ) / 過去のある時点より前に完了したことは過去完了形で表します。"
+    },
+    {
+        jp: "私たちは2020年からずっとこの町に住んでいます。",
+        en: "We <span class='blank'></span> in this town since 2020.",
+        ans: "have lived",
+        options: ["lived", "had lived", "have lived", "are living"],
+        explanation: "live (住む) / 過去から現在まで続いている状態は現在完了形です。"
+    },
+    {
+        jp: "私は昨日まで、一度も雪を見たことがなかった。",
+        en: "I <span class='blank'></span> snow until yesterday.",
+        ans: "had never seen",
+        options: ["have never seen", "never saw", "had never seen", "had never been seeing"],
+        explanation: "see (見る) / 過去のある時点までの「経験」は過去完了形を使います。"
+    },
+    {
+        jp: "彼は今朝からずっと宿題をしています。",
+        en: "He <span class='blank'></span> his homework since this morning.",
+        ans: "has been doing",
+        options: ["had been doing", "has done", "did", "has been doing"],
+        explanation: "do (する) / 今も続いている動作の継続は現在完了進行形がベストです。"
+    },
+    {
+        jp: "先週、私は財布を失くしたことに気づいた。",
+        en: "Last week, I realized that I <span class='blank'></span> my wallet.",
+        ans: "had lost",
+        options: ["have lost", "lost", "had lost", "was losing"],
+        explanation: "realize (気づく) よりも前に lose (失くす) が起きているので過去完了形にします。"
+    },
+    {
+        jp: "彼女が引退したとき、彼女は10年間コーチをしていた。",
+        en: "She <span class='blank'></span> a coach for ten years when she retired.",
+        ans: "had been",
+        options: ["has been", "had been", "was", "has been being"],
+        explanation: "be (〜である) / 過去の引退時点までの状態の継続は過去完了形です。"
+    },
+    {
+        jp: "トムはとても疲れていた。なぜなら一日中走っていたからだ。",
+        en: "Tom was exhausted because he <span class='blank'></span> all day.",
+        ans: "had been running",
+        options: ["has been running", "ran", "had been running", "has run"],
+        explanation: "run (走る) / 過去の時点までの動作の継続を強調するので過去完了進行形になります。"
+    },
+    {
+        jp: "たった今、昼食を食べ終えました。",
+        en: "I <span class='blank'></span> my lunch just now.",
+        ans: "finished",
+        options: ["finished", "have finished", "had finished", "am finishing"],
+        explanation: "finish (終える) / 'just now' は過去の特定時点を指すため現在完了形は使えません。"
+    },
+    {
+        jp: "ケンはロンドンに引っ越す前に、5年間フランス語を勉強していた。",
+        en: "Ken <span class='blank'></span> French for five years before he moved to London.",
+        ans: "had studied",
+        options: ["studied", "has studied", "had studied", "is studying"],
+        explanation: "study (勉強する) / 引っ越した過去の時点までの継続なので過去完了形です。"
+    },
+    {
+        jp: "彼らは3時間ずっとテニスをしている。（今も継続中）",
+        en: "They <span class='blank'></span> tennis for three hours.",
+        ans: "have been playing",
+        options: ["played", "had been playing", "have played", "have been playing"],
+        explanation: "play (する) / 現在も動作が続いていることを強調する現在完了進行形です。"
+    },
+    {
+        jp: "映画が始まる前に、私たちは劇場に着いた。",
+        en: "We had arrived at the theater before the movie <span class='blank'></span>.",
+        ans: "started",
+        options: ["started", "had started", "has started", "starts"],
+        explanation: "start (始まる) / 『劇場に着いた(had arrived)』のが先なので、後は過去形を使います。"
+    },
+    {
+        jp: "あなたは今までに、北海道に行ったことがありますか？",
+        en: "Have you ever <span class='blank'></span> to Hokkaido?",
+        ans: "been",
+        options: ["gone", "be", "been", "was"],
+        explanation: "be to ~ (〜へ行ったことがある) / 現在までの経験を表す現在完了形の慣用表現です。"
+    },
+    {
+        jp: "駅に着いたとき、列車はすでに出発していた。",
+        en: "When I reached the station, the train <span class='blank'></span> already.",
+        ans: "had left",
+        options: ["has left", "leaves", "had left", "was leaving"],
+        explanation: "leave (出発する) / 過去の駅到着時点ですでに完了していたので過去完了形です。"
+    },
+    {
+        jp: "私は昨日、3時間もピアノを練習しました。",
+        en: "I <span class='blank'></span> the piano for three hours yesterday.",
+        ans: "practiced",
+        options: ["practiced", "have practiced", "had been practicing", "was practicing"],
+        explanation: "practice (練習する) / 昨日の単なる事実を述べる場合は『過去形』を使います。"
+    }
+];
+
+let currentIndex = 0;
+
+function loadQuestion() {
+    const q = questions[currentIndex];
+    document.getElementById('progress').textContent = `Question ${currentIndex + 1} / ${questions.length}`;
+    document.getElementById('trans-text').textContent = q.jp;
+    document.getElementById('sentence-text').innerHTML = q.en;
+    document.getElementById('explanation-text').style.display = 'none';
+    document.getElementById('next-button').style.display = 'none';
+
+    const container = document.getElementById('choices-container');
+    container.innerHTML = '';
+
+    const shuffled = [...q.options].sort(() => Math.random() - 0.5);
+    shuffled.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.className = 'choice-btn';
+        btn.textContent = opt;
+        btn.onclick = () => checkAnswer(opt, btn);
+        container.appendChild(btn);
+    });
+}
+
+function checkAnswer(selected, btn) {
+    const q = questions[currentIndex];
+    if (selected === q.ans) {
+        confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#ff80ab', '#ffffff', '#4caf50'] });
+        const blank = document.querySelector('.blank');
+        blank.textContent = q.ans;
+        blank.classList.add('correct');
+        const expBox = document.getElementById('explanation-text');
+        expBox.textContent = `💡 解説: ${q.explanation}`;
+        expBox.style.display = 'block';
+        document.querySelectorAll('.choice-btn').forEach(b => b.style.pointerEvents = 'none');
+        document.getElementById('next-button').style.display = 'inline-block';
+    } else {
+        btn.classList.add('wrong');
+        btn.disabled = true;
+    }
+}
+
+function nextQuestion() {
+    currentIndex++;
+    if (currentIndex < questions.length) {
+        loadQuestion();
+    } else {
+        document.getElementById('quiz-ui').innerHTML = `
+            <h2 style="color:var(--dark-pink)">All Clear! 🏆</h2>
+            <button class="next-btn" style="display:inline-block" onclick="location.reload()">最初から解く</button>
+        `;
+    }
+}
+
+function setupWorksheet() {
+    const list = document.getElementById('worksheet-list');
+    list.innerHTML = '';
+    questions.forEach((q, idx) => {
+        const item = document.createElement('div');
+        item.className = 'worksheet-item';
+        item.innerHTML = `
+            <div class="translation-ws">${idx + 1}. ${q.jp}</div>
+            <div class="sentence-ws">${q.en}</div>
+        `;
+        list.appendChild(item);
+    });
+}
+
+window.onload = () => {
+    loadQuestion();
+    setupWorksheet();
+};
+</script>
+</body>
+</html>
