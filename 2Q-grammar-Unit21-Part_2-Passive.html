@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>21章 注意すべき受動態</title>
+    <link href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&family=Kosugi+Maru&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #fff0f6;
+            --primary-pink: #ff80ab;
+            --dark-pink: #c94b7b;
+            --text-black: #2c3e50;
+            --white: #ffffff;
+            --correct-green: #4caf50;
+            --wrong-red: #ff5252;
+            --correct-blue: #1e88e5;
+        }
+
+        body {
+            font-family: 'Kosugi Maru', 'Andika', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-black);
+            margin: 0; padding: 20px;
+            display: flex; flex-direction: column; align-items: center;
+        }
+
+        header { text-align: center; margin-bottom: 20px; }
+        h1 { color: var(--dark-pink); font-size: 1.8rem; margin-bottom: 5px; }
+        .mode-badge { background: var(--dark-pink); color: white; padding: 5px 15px; border-radius: 20px; font-size: 0.9rem; }
+
+        .container {
+            background: var(--white);
+            width: 95%; max-width: 750px;
+            padding: 30px; border-radius: 25px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            text-align: center; margin-bottom: 30px;
+        }
+
+        .translation { font-size: 1.1rem; color: #666; margin-bottom: 10px; font-weight: bold; }
+        .sentence { font-size: 1.4rem; margin-bottom: 25px; line-height: 1.8; transition: 0.3s; }
+        .sentence.solved { color: var(--correct-blue); font-weight: bold; }
+        
+        .blank { display: inline-block; min-width: 120px; border-bottom: 2px solid var(--dark-pink); color: var(--dark-pink); font-weight: bold; }
+        .blank.correct { border-bottom: none; color: var(--correct-green); }
+
+        .choices-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .choice-btn {
+            background: var(--white); border: 2px solid #ffc1e3;
+            padding: 15px; border-radius: 15px; font-size: 1.1rem;
+            cursor: pointer; transition: 0.2s; font-family: inherit;
+        }
+        .choice-btn:hover { background: #fff1f8; border-color: var(--primary-pink); }
+        .choice-btn.wrong { background: #ffebee; border-color: var(--wrong-red); color: var(--wrong-red); }
+
+        .judge-btns { display: flex; justify-content: center; gap: 40px; margin-top: 20px; }
+        .btn-circle, .btn-cross {
+            width: 90px; height: 90px; border-radius: 50%; border: 4px solid #eee;
+            font-size: 2.2rem; cursor: pointer; background: white; transition: 0.2s;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .btn-circle { color: var(--correct-green); border-color: var(--correct-green); }
+        .btn-cross { color: var(--wrong-red); border-color: var(--wrong-red); }
+
+        .correction-area { display: none; margin-top: 20px; animation: fadeIn 0.4s; }
+        .correction-title { font-weight: bold; color: var(--dark-pink); margin-bottom: 15px; }
+
+        .explanation-box { 
+            display: none; font-size: 1rem; color: var(--correct-blue); 
+            background: #e3f2fd; padding: 15px; border-radius: 10px;
+            margin-top: 20px; font-weight: bold; text-align: left;
+        }
+
+        .next-btn {
+            display: none; background: var(--dark-pink); color: white;
+            border: none; padding: 12px 40px; border-radius: 30px;
+            font-size: 1.2rem; cursor: pointer; margin-top: 25px;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+     @media print {
+    @page { 
+        size: A4; 
+        margin: 15mm; 
+    }
+    body { 
+        background: white; 
+        padding: 0; 
+    }
+    header, #quiz-container { 
+        display: none !important; 
+    }
+    .print-only { 
+        display: block !important; 
+    }
+
+    /* メインタイトル */
+    .ws-title { 
+        font-size: 1.8rem; 
+        font-weight: bold; 
+        margin-bottom: 20px; 
+        text-align: center; 
+    }
+
+    /* セクションタイトル：改ページを強制しない */
+    .section-title { 
+        border-left: 5px solid black; 
+        padding-left: 10px; 
+        margin: 25px 0 15px; 
+        font-weight: bold; 
+        font-size: 1.0rem; 
+        /* タイトルだけがページ下部に取り残されるのを防ぐ */
+        break-after: avoid; 
+    }
+
+    /* 設問リスト */
+    .ws-item { 
+        margin-bottom: 20px; 
+        /* 設問の途中でページが切れないようにだけ設定 */
+        break-inside: avoid;
+    }
+
+    .ws-q { font-size: 1rem; margin-bottom: 10px; font-weight: bold; }
+    .ws-en { font-size: 1.1rem; margin-bottom: 10px; }
+    .ws-blank-line { 
+        border-bottom: 1px solid black; 
+        display: inline-block; 
+        width: 100%; 
+        height: 30px; 
+    }
+}
+        .print-only { display: none; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>21章 注意すべき受動態</h1>
+    <p id="progress-text">Part 1: 四択問題 (1/10)</p>
+    <div id="mode-label" class="mode-badge">Multiple Choice</div>
+</header>
+
+<div class="container" id="quiz-container">
+    <div id="q-content">
+        <div class="translation" id="trans-text"></div>
+        <div id="sentence-text" class="sentence"></div>
+        
+        <div id="choice-area" class="choices-grid"></div>
+
+        <div id="judge-area" class="judge-btns">
+            <button class="btn-circle" onclick="checkJudge(true)">○</button>
+            <button class="btn-cross" onclick="checkJudge(false)">×</button>
+        </div>
+
+        <div id="correction-area" class="correction-area">
+            <p id="correction-instruction" class="correction-title">正しい修正を選んでください！</p>
+            <div id="correction-choices" class="choices-grid"></div>
+        </div>
+
+        <div id="explanation" class="explanation-box"></div>
+    </div>
+    <button class="next-btn" id="next-button" onclick="nextQuestion()">Next →</button>
+</div>
+
+<div class="print-only">
+    <div class="ws-title">21章 注意すべき受動態 </div>
+    <div class="section-title">Part 1. 適する語句を選んで書きなさい</div>
+    <div id="ws-part1"></div>
+    <div class="section-title">Part 2. 文が正しければ○、誤っていれば正しく直しなさい</div>
+    <div id="ws-part2"></div>
+</div>
+
+<script>
+const mcQuestions = [
+    {
+        jp: "多くの人々が、その新しいスタジアムを褒めている。",
+        en: "The new stadium <span class='blank'></span> by many people.",
+        ans: "is spoken well of",
+        options: ["is spoken well", "is spoken well of", "speaks well of", "is speaking well of"],
+        exp: "句動詞 speak well of (褒める) の受動態です。前置詞 of を忘れないように注意！"
+    },
+    {
+        jp: "彼は試験中に辞書を使っているのを見つかってしまった。",
+        en: "He <span class='blank'></span> a dictionary during the exam.",
+        ans: "was found using",
+        options: ["found", "was found using", "was found used", "is finding"],
+        exp: "find A 〜ing (Aが〜しているのを見つける) の受動態です。進行中の動作を見つかった場合は 〜ing を使います。"
+    },
+    {
+        jp: "彼女はクラスメイトに笑われた。",
+        en: "She <span class='blank'></span> by her classmates.",
+        ans: "was laughed at",
+        options: ["laughed at", "was laughed", "was laughed at", "is laughing at"],
+        exp: "laugh at (笑う) の受動態です。be動詞 ＋ 過去分詞 ＋ at の形をセットで覚えましょう。"
+    },
+    {
+        jp: "私は、先生にもう一度チャンスをもらった。",
+        en: "I <span class='blank'></span> another chance by my teacher.",
+        ans: "was given",
+        options: ["gave", "was given", "was gave", "given"],
+        exp: "SVOOの受動態。I (人) が主語の場合は be + 過去分詞にします。"
+    },
+    {
+        jp: "その赤ちゃんは、祖父によって「海斗」と名付けられた。",
+        en: "The baby <span class='blank'></span> Kaito by his grandfather.",
+        ans: "was named",
+        options: ["named", "is naming", "was named", "was name"],
+        exp: "SVOCの受動態。受動態にしても補語(Kaito)の位置は変わりません。"
+    },
+    {
+        jp: "ケンは、校庭で走っているのを見られた。",
+        en: "Ken was seen <span class='blank'></span> in the playground.",
+        ans: "to run",
+        options: ["run", "to run", "ran", "to running"],
+        exp: "知覚動詞の受動態。能動態での原形不定詞は、受動態では to不定詞 に変わります。現在分詞を使いたい場合は seen running となります。"
+    },
+    {
+        jp: "私はコーチに、毎日練習させられた。",
+        en: "I <span class='blank'></span> every day by my coach.",
+        ans: "was made to practice",
+        options: ["was making practice", "was made practice", "was made to practice", "made me practice"],
+        exp: "使役動詞 make の受動態。能動態では不要だった to が復活します。"
+    },
+    {
+        jp: "その猫は、私の妹によって世話をされている。",
+        en: "The cat <span class='blank'></span> by my sister.",
+        ans: "is taken care of",
+        options: ["is taken care", "is taken care of", "takes care of", "is taking care"],
+        exp: "take care of (世話をする) の受動態。句動詞の前置詞(of)は消せません。"
+    },
+    {
+        jp: "将来の夢について、昨日父から質問された。",
+        en: "I <span class='blank'></span> my dream by my father yesterday.",
+        ans: "was asked about",
+        options: ["asked", "was asked about", "was asked", "been asked about"],
+        exp: "ask A B の受動態。過去の特定時点(yesterday)の事実なので過去形を使います。"
+    },
+    {
+        jp: "その音楽家は、世界中の人に知られている。",
+        en: "The musician <span class='blank'></span> to people all over the world.",
+        ans: "is known",
+        options: ["knows", "is known by", "is known", "knowing"],
+        exp: "know の受動態。動作主を by ではなく to で表す慣用表現です。"
+    }
+];
+
+let tfQuestions = [
+    { s: "I was given a nice present for my birthday.", ans: true, correctS: "I was given a nice present for my birthday.", exp: "SVOOの受動態。正しい形です。" },
+    { s: "The meeting was put off by the teacher.", ans: true, correctS: "The meeting was put off by the teacher.", exp: "句動詞 put off (延期する) の受動態。正しい形です。" },
+    { s: "The baby was looked after by her aunt.", ans: true, correctS: "The baby was looked after by her aunt.", exp: "look after の受動態。after と by が並んでも正解です。" },
+    { s: "They were heard to sing together in the hall.", ans: true, correctS: "They were heard to sing together in the hall.", exp: "知覚動詞 hear の受動態。to不定詞が正しく使われています。" },
+    { s: "The new stadium is spoken well of.", ans: true, correctS: "The new stadium is spoken well of.", exp: "speak well of の受動態。of が残っており正しいです。" },
+    { s: "My brother was made clean his room by my mother.", ans: false, choices: ["was made to clean に変える", "was make to clean に変える", "was made cleaning に変える"], correctPattern: "was made to clean に変える", correctS: "My brother was made to clean his room by my mother.", exp: "使役動詞 make の受動態は be made to do (to不定詞) が必要です。" },
+    { s: "Jim was seen enter the library.", ans: false, choices: ["was seen to enter に変える", "was seen entering に変える", "was saw to enter に変える"], correctPattern: "was seen to enter に変える", correctS: "Jim was seen to enter the library.", exp: "知覚動詞の受動態。原形(enter)は受動態では to不定詞になります。" },
+    { s: "The dog was named as Lucky.", ans: false, choices: ["was named Lucky に変える", "was name Lucky に変える", "was named for Lucky に変える"], correctPattern: "was named Lucky に変える", correctS: "The dog was named Lucky.", exp: "name A B の受動態。as は不要です。" },
+    { s: "He was spoken by a stranger on the street.", ans: false, choices: ["was spoken with に変える", "was spoken to に変える", "was speaking to に変える"], correctPattern: "was spoken to に変える", correctS: "He was spoken to by a stranger on the street.", exp: "speak to A (話しかける) の受動態。to を残す必要があります。" },
+    { s: "We were made to stay at school after class.", ans: true, correctS: "We were made to stay at school after class.", exp: "使役の受動態。be made to do の形になっており正しいです。" }
+];
+
+let currentIdx = 0;
+let isTFMode = false;
+
+function loadQuestion() {
+    const choiceArea = document.getElementById('choice-area');
+    const judgeArea = document.getElementById('judge-area');
+    const correctionArea = document.getElementById('correction-area');
+    const expBox = document.getElementById('explanation');
+    const nextBtn = document.getElementById('next-button');
+    const sentenceText = document.getElementById('sentence-text');
+    const transText = document.getElementById('trans-text');
+    
+    expBox.style.display = 'none';
+    nextBtn.style.display = 'none';
+    correctionArea.style.display = 'none';
+    sentenceText.classList.remove('solved');
+
+    if (!isTFMode) {
+        const q = mcQuestions[currentIdx];
+        document.getElementById('progress-text').textContent = `Part 1: 四択問題 (${currentIdx + 1} / 10)`;
+        transText.textContent = q.jp;
+        transText.style.display = 'block';
+        sentenceText.innerHTML = q.en;
+        choiceArea.style.display = 'grid';
+        judgeArea.style.display = 'none';
+        
+        choiceArea.innerHTML = '';
+        q.options.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.className = 'choice-btn';
+            btn.textContent = opt;
+            btn.onclick = () => checkMC(opt, btn);
+            choiceArea.appendChild(btn);
+        });
+    } else {
+        const q = tfQuestions[currentIdx];
+        document.getElementById('mode-label').textContent = "True or False";
+        document.getElementById('progress-text').textContent = `Part 2: ◯×判定 (${currentIdx + 1} / 10)`;
+        transText.textContent = "文法的に正しいですか？";
+        transText.style.display = 'block';
+        sentenceText.textContent = q.s;
+        choiceArea.style.display = 'none';
+        judgeArea.style.display = 'flex';
+        document.querySelectorAll('.btn-circle, .btn-cross').forEach(b => b.style.pointerEvents = 'auto');
+    }
+}
+
+function checkMC(selected, btn) {
+    const q = mcQuestions[currentIdx];
+    if (selected === q.ans) {
+        successEffect();
+        const blank = document.querySelector('.blank');
+        if(blank) {
+            blank.textContent = q.ans;
+            blank.classList.add('correct');
+        }
+        document.getElementById('sentence-text').classList.add('solved');
+        showExplanation(q.exp);
+    } else {
+        btn.classList.add('wrong');
+        btn.disabled = true;
+    }
+}
+
+function checkJudge(userAns) {
+    const q = tfQuestions[currentIdx];
+    if (userAns === q.ans) {
+        if (q.ans === false) {
+            showCorrectionStep(q);
+        } else {
+            successEffect();
+            document.getElementById('sentence-text').classList.add('solved');
+            // 指示文を消す
+            document.getElementById('trans-text').style.display = 'none';
+            showExplanation(`✅ 正解！この文は正しいです。\n 💡 ${q.exp}`);
+        }
+    } else {
+        alert(userAns ? "この文には間違いがあります！" : "この文は正しいですよ！");
+    }
+}
+
+function showCorrectionStep(q) {
+    document.getElementById('judge-area').style.display = 'none';
+    const area = document.getElementById('correction-area');
+    const grid = document.getElementById('correction-choices');
+    document.getElementById('correction-instruction').style.display = 'block';
+    area.style.display = 'block';
+    grid.innerHTML = "";
+    
+    q.choices.forEach(choice => {
+        const btn = document.createElement('button');
+        btn.className = 'choice-btn';
+        btn.textContent = choice;
+        btn.onclick = () => {
+            if (choice === q.correctPattern) {
+                successEffect();
+                const sentenceText = document.getElementById('sentence-text');
+                sentenceText.textContent = `✅ ${q.correctS}`;
+                sentenceText.classList.add('solved');
+                // 指示文を消す
+                document.getElementById('trans-text').style.display = 'none';
+                document.getElementById('correction-instruction').style.display = 'none';
+                showExplanation(`💡 ${q.exp}`);
+            } else {
+                btn.classList.add('wrong');
+                btn.disabled = true;
+            }
+        };
+        grid.appendChild(btn);
+    });
+}
+
+function showExplanation(text) {
+    const expBox = document.getElementById('explanation');
+    expBox.innerHTML = text.replace(/\n/g, '<br>');
+    expBox.style.display = 'block';
+    const nextBtn = document.getElementById('next-button');
+    nextBtn.style.display = 'inline-block';
+    document.querySelectorAll('.choice-btn, .btn-circle, .btn-cross').forEach(b => b.style.pointerEvents = 'none');
+}
+
+function nextQuestion() {
+    currentIdx++;
+    if (!isTFMode && currentIdx >= mcQuestions.length) {
+        isTFMode = true;
+        currentIdx = 0;
+    } else if (isTFMode && currentIdx >= tfQuestions.length) {
+        document.getElementById('quiz-container').innerHTML = "<h2>All Clear! 🏆</h2><button class='next-btn' style='display:block; margin: 20px auto;' onclick='location.reload()'>最初から解く</button>";
+        return;
+    }
+    loadQuestion();
+}
+
+function successEffect() {
+    confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#ff80ab', '#ffffff', '#4caf50'] });
+}
+
+function setupWorksheet() {
+    const p1 = document.getElementById('ws-part1');
+    mcQuestions.forEach((q, i) => {
+        const item = document.createElement('div');
+        item.className = 'ws-item';
+        const opts = q.options.join(' / ');
+        item.innerHTML = `<div class="ws-q">${i+1}. ${q.jp}</div>
+        <div class="ws-en">${q.en.replace("<span class='blank'></span>", " (　　　　　　　　　 ) ")}</div>
+        <div style="font-size:0.9rem; margin-top:5px;">[ ${opts} ]</div>`;
+        p1.appendChild(item);
+    });
+
+    const p2 = document.getElementById('ws-part2');
+    tfQuestions.forEach((q, i) => {
+        const item = document.createElement('div');
+        item.className = 'ws-item';
+        item.innerHTML = `<div class="ws-q">${i+1}. ${q.s}</div>
+        <div style="margin-top:5px;">修正: <span class="ws-blank-line"></span></div>`;
+        p2.appendChild(item);
+    });
+}
+
+window.onload = () => {
+    // ◯×問題のシャッフル
+    for (let i = tfQuestions.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [tfQuestions[i], tfQuestions[j]] = [tfQuestions[j], tfQuestions[i]];
+    }
+    loadQuestion();
+    setupWorksheet();
+};
+</script>
+</body>
+</html>
