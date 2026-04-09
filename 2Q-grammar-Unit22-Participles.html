@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>22章 分詞の基本</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kosugi+Maru&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        :root {
+            --bg-blue: #e3f2fd;
+            --primary-blue: #2196f3;
+            --dark-blue: #1565c0;
+            --text-black: #2c3e50;
+            --white: #ffffff;
+            --correct-green: #4caf50;
+            --wrong-red: #f44336;
+        }
+
+        body {
+            font-family: 'Kosugi Maru', sans-serif;
+            background-color: var(--bg-blue);
+            color: var(--text-black);
+            margin: 0; padding: 20px;
+            display: flex; flex-direction: column; align-items: center;
+        }
+
+        .no-print { width: 100%; max-width: 800px; display: flex; flex-direction: column; align-items: center; }
+
+        .control-panel {
+            display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; justify-content: center;
+        }
+
+        .tab-btn {
+            padding: 10px 15px; border-radius: 20px; border: 2px solid var(--primary-blue);
+            background: white; color: var(--primary-blue); cursor: pointer; font-weight: bold;
+        }
+
+        .tab-btn.active { background: var(--primary-blue); color: white; }
+
+        .container {
+            background: var(--white); width: 100%;
+            padding: 30px; border-radius: 25px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center;
+            box-sizing: border-box;
+        }
+
+        .question-box { margin-bottom: 20px; min-height: 120px; }
+        .translation { font-size: 1.1rem; color: #666; margin-bottom: 10px; font-weight: bold; }
+        .sentence { font-size: 1.3rem; margin-bottom: 20px; line-height: 1.6; }
+        .blank { border-bottom: 2px solid var(--primary-blue); min-width: 120px; display: inline-block; color: var(--primary-blue); padding: 0 10px; }
+
+        .choices-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .choice-btn {
+            background: white; border: 2px solid #bbdefb; padding: 12px;
+            border-radius: 12px; font-size: 1.1rem; cursor: pointer; transition: 0.2s;
+        }
+        .choice-btn:hover { background: #e3f2fd; }
+        .choice-btn.wrong { background: #ffebee; border-color: var(--wrong-red); color: var(--wrong-red); }
+
+        .answer-area { 
+            min-height: 50px; border: 2px dashed var(--primary-blue); 
+            border-radius: 12px; margin-bottom: 15px; display: flex; 
+            flex-wrap: wrap; gap: 8px; justify-content: center; align-items: center; padding: 10px;
+        }
+        .answer-area.completed { border: none; font-size: 1.3rem; color: var(--correct-green); }
+        
+        .word-bank { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+        .word-btn { 
+            background: white; border: 1.5px solid var(--primary-blue); 
+            padding: 8px 15px; border-radius: 8px; cursor: pointer; font-weight: bold;
+        }
+        .word-btn.used { visibility: hidden; }
+        
+        .answer-word { 
+            background: var(--primary-blue); color: white; padding: 5px 12px; 
+            border-radius: 5px; cursor: pointer; 
+        }
+        .final-text { color: var(--correct-green); font-weight: bold; }
+
+        .action-btn {
+            background: var(--dark-blue); color: white; border: none;
+            padding: 15px 40px; border-radius: 30px; font-size: 1.1rem;
+            cursor: pointer; margin-top: 20px; display: none;
+        }
+
+        /* 印刷エリア */
+        #print-area { display: none; }
+        @media print {
+            .no-print { display: none !important; }
+            #print-area { display: block !important; width: 100%; color: black; }
+            .print-page { page-break-after: always; padding: 10mm; }
+            h2 { border-bottom: 1px solid black; padding-bottom: 5px; font-size: 1.1rem; margin-top: 15px; }
+            h2:first-child { margin-top: 0; }
+            .print-item { margin-bottom: 20px; line-height: 1.1; page-break-inside: avoid; }
+            .print-en { font-size: 1.1rem; margin-top: 5px; border-bottom: 0px solid #000; padding-bottom: 6px; min-height: 1.3em; }
+            .choices-hint { font-style: italic; font-size: 1rem; color: #333; margin-top: 5px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="no-print">
+    <h1>22章 分詞の基本</h1>
+    <div class="control-panel">
+        <button class="tab-btn active" onclick="switchPart(1)">Part 1: 基本</button>
+        <button class="tab-btn" onclick="switchPart(2)">Part 2: 形容詞的用法</button>
+        <button class="tab-btn" onclick="switchPart(3)">Part 3: 第5文型(SVOC)</button>
+        <button class="tab-btn" onclick="switchPart(4)">Part 4: Mix問題</button>
+    </div>
+
+    <div class="container">
+        <div id="progress" style="margin-bottom: 10px; font-weight: bold;">Question 1</div>
+        <div class="question-box">
+            <div id="q-trans" class="translation"></div>
+            <div id="q-sentence" class="sentence"></div>
+            <div id="interactive-area"></div>
+        </div>
+        <div id="result-msg" style="margin: 10px; font-weight: bold; min-height: 1.2em;"></div>
+        <button id="next-btn" class="action-btn" onclick="handleAction()">Check Answer</button>
+    </div>
+    
+    <button onclick="window.print()" style="margin-top:20px; background:none; border:none; text-decoration:underline; cursor:pointer; color:var(--dark-blue);">
+        ワークシートを印刷する (Cmd+P)
+    </button>
+</div>
+
+<div id="print-area">
+    <div class="print-page" id="print-page-1"></div>
+    <div class="print-page" id="print-page-2"></div>
+</div>
+
+<script>
+const quizData = {
+    p1: [
+        { jp: "少年は公園で走っています。", en: "The boy is <span class='blank'></span> in the park.", ans: "running", options: ["run", "running", "ran", "runs"] },
+        { jp: "その手紙は英語で書かれています。", en: "The letter is <span class='blank'></span> in English.", ans: "written", options: ["writing", "write", "written", "wrote"] },
+        { jp: "彼らは今、昼食を食べているところです。", en: "They are <span class='blank'></span> lunch now.", ans: "having", options: ["have", "having", "had", "has"] },
+        { jp: "この車は日本で作られました。", en: "This car was <span class='blank'></span> in Japan.", ans: "made", options: ["make", "making", "made", "makes"] },
+        { jp: "彼女は数学を勉強しています。", en: "She is <span class='blank'></span> math.", ans: "studying", options: ["study", "studied", "studies", "studying"] },
+        { jp: "その窓はケンによって壊されました。", en: "The window was <span class='blank'></span> by Ken.", ans: "broken", options: ["break", "breaking", "broke", "broken"] }
+    ],
+    p2: [
+        { jp: "赤いドレスを着ている女の子を知っていますか？", en: "Do you know the <span class='blank'></span>?", ans: "girl wearing a red dress", words: ["girl", "wearing", "a", "red", "dress"] },
+        { jp: "これは夏目漱石によって書かれた本です。", en: "This is a <span class='blank'></span>.", ans: "book written by Soseki Natsume", words: ["book", "written", "by", "Soseki", "Natsume"] },
+        { jp: "向こうで走っている犬を見てください。", en: "Look at the <span class='blank'></span>.", ans: "dog running over there", words: ["dog", "running", "over", "there"] },
+        { jp: "私はドイツ製の時計を買いました。", en: "I bought a <span class='blank'></span>.", ans: "watch made in Germany", words: ["watch", "made", "in", "Germany"] }
+    ],
+    p3: [
+        { jp: "彼は私を1時間近く待たせた。", en: "He kept me <span class='blank'></span> for almost an hour.", ans: "waiting", options: ["wait", "waiting", "waited", "to wait"] },
+        { jp: "私は2階から自分の名前が呼ばれるのを聞いた。", en: "I heard my name <span class='blank'></span> from upstairs.", ans: "called", options: ["call", "calling", "called", "to call"] },
+        { jp: "彼女はドアを鍵をかけないままにしておいた。", en: "She left the door <span class='blank'></span>.", ans: "unlocked", options: ["unlock", "unlocking", "unlocked", "to unlock"] },
+        { jp: "私は誰かが私の部屋に入ってくるのを感じた。", en: "I felt someone <span class='blank'></span> my room.", ans: "entering", options: ["entering", "entered", "enters", "to enter"] },
+        { jp: "私は昨日のパーティーで、英語で自分の意思を伝えることができなかった。", en: "I couldn't make <span class='blank'></span> at the party yesterday.", ans: "myself understood in English", words: ["myself", "understood", "in", "English"] },
+        { jp: "その知らせを聞いて、彼女はずっとワクワクしていた。", en: "The news <span class='blank'></span>.", ans: "kept her excited", words: ["kept", "her", "excited"] },
+        { jp: "彼はエンジンをかけたままにした。", en: "He <span class='blank'></span>.", ans: "left the engine running", words: ["left", "the", "engine", "running"] },
+        { jp: "私は彼女がピアノを弾いているのをよく見かける。", en: "I often <span class='blank'></span>.", ans: "see her playing the piano", words: ["see", "her", "playing", "the", "piano"] }
+    ],
+    p4: [
+        { jp: "", en: "Look at the pile of <span class='blank'></span> leaves in the garden.", ans: "burning", options: ["burn", "burning", "burnt", "to burn"] },
+        { jp: "", en: "There were hundreds of <span class='blank'></span> pieces of glass on the floor.", ans: "broken", options: ["break", "breaking", "broken", "broke"] },
+        { jp: "", en: "I saw him <span class='blank'></span> his dog in the park this morning.", ans: "walking", options: ["walks", "walking", "walked", "to walk"] },
+        { jp: "", en: "It's a beautiful view. I want to have my picture <span class='blank'></span> with the mountain.", ans: "taken", options: ["take", "taking", "taken", "to take"] },
+        { jp: "", en: "They kept the fire <span class='blank'></span> all night to stay warm.", ans: "burning", options: ["burn", "burning", "burnt", "to burn"] },
+        { jp: "", en: "English is a language <span class='blank'></span> by millions of people all over the world.", ans: "spoken", options: ["speak", "speaking", "spoke", "spoken"] },
+        { jp: "", en: "I need to have my computer <span class='blank'></span> as soon as possible.", ans: "fixed", options: ["fix", "fixing", "fixed", "to fix"] },
+        { jp: "", en: "The <span class='blank'></span> baby looks like an angel in the crib.", ans: "sleeping", options: ["sleep", "sleeping", "slept", "sleeps"] },
+        { jp: "", en: "It is dangerous to leave the engine <span class='blank'></span> in the garage.", ans: "running", options: ["run", "running", "ran", "runs"] },
+        { jp: "", en: "The stadium was filled with <span class='blank'></span> fans cheering for the team.", ans: "excited", options: ["excite", "exciting", "excited", "excites"] }
+    ]
+};
+
+let currentPart = 'p1';
+let currentIdx = 0;
+
+function switchPart(partNum) {
+    currentPart = 'p' + partNum;
+    currentIdx = 0;
+    document.querySelectorAll('.tab-btn').forEach((btn, i) => {
+        btn.classList.toggle('active', i === partNum - 1);
+    });
+    loadQuestion();
+}
+
+function loadQuestion() {
+    const data = quizData[currentPart][currentIdx];
+    document.getElementById('progress').textContent = `Part ${currentPart.slice(1)} - Question ${currentIdx + 1} / ${quizData[currentPart].length}`;
+    document.getElementById('q-trans').textContent = data.jp || "(和訳なし - 適切な形を選ぼう)";
+    document.getElementById('q-sentence').innerHTML = data.en;
+    document.getElementById('result-msg').textContent = "";
+    document.getElementById('next-btn').style.display = "none";
+    
+    const area = document.getElementById('interactive-area');
+    area.innerHTML = "";
+
+    if (data.options) {
+        const grid = document.createElement('div');
+        grid.className = "choices-grid";
+        const shuffledOptions = [...data.options].sort(() => Math.random() - 0.5);
+        shuffledOptions.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.className = "choice-btn";
+            btn.textContent = opt;
+            btn.onclick = () => checkChoice(opt, btn);
+            grid.appendChild(btn);
+        });
+        area.appendChild(grid);
+    } else {
+        const ansArea = document.createElement('div');
+        ansArea.className = "answer-area";
+        ansArea.id = "answer-area";
+        area.appendChild(ansArea);
+        const bank = document.createElement('div');
+        bank.className = "word-bank";
+        const shuffled = [...data.words].sort(() => Math.random() - 0.5);
+        shuffled.forEach((word, i) => {
+            const btn = document.createElement('button');
+            btn.className = "word-btn";
+            btn.textContent = word;
+            btn.id = `word-${i}`;
+            btn.onclick = () => addWord(word, `word-${i}`);
+            bank.appendChild(btn);
+        });
+        area.appendChild(bank);
+        document.getElementById('next-btn').style.display = "inline-block";
+        document.getElementById('next-btn').textContent = "Check Answer";
+    }
+}
+
+function checkChoice(selected, btn) {
+    const data = quizData[currentPart][currentIdx];
+    if (selected === data.ans) {
+        confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+        document.querySelector('.blank').textContent = selected;
+        document.getElementById('result-msg').style.color = "var(--correct-green)";
+        document.getElementById('result-msg').textContent = "Excellent! ✨";
+        document.getElementById('next-btn').style.display = "inline-block";
+        document.getElementById('next-btn').textContent = "Next →";
+        document.querySelectorAll('.choice-btn').forEach(b => b.style.pointerEvents = "none");
+    } else {
+        btn.classList.add('wrong');
+        document.getElementById('result-msg').style.color = "var(--wrong-red)";
+        document.getElementById('result-msg').textContent = "Try again!";
+    }
+}
+
+function addWord(word, id) {
+    const btn = document.getElementById(id);
+    if(btn.classList.contains('used')) return;
+    btn.classList.add('used');
+    const span = document.createElement('span');
+    span.className = "answer-word";
+    span.textContent = word;
+    span.onclick = () => {
+        btn.classList.remove('used');
+        span.remove();
+    };
+    document.getElementById('answer-area').appendChild(span);
+}
+
+function handleAction() {
+    const data = quizData[currentPart][currentIdx];
+    const btn = document.getElementById('next-btn');
+    if (btn.textContent === "Next →") {
+        currentIdx++;
+        if (currentIdx < quizData[currentPart].length) {
+            loadQuestion();
+        } else {
+            alert("Part Completed! 🎉");
+        }
+        return;
+    }
+    if (data.words) {
+        const wordSpans = document.querySelectorAll('.answer-word');
+        const userAns = Array.from(wordSpans).map(el => el.textContent).join(" ");
+        if (userAns === data.ans) {
+            confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+            const area = document.getElementById('answer-area');
+            area.innerHTML = `<span class="final-text">${data.ans}</span>`;
+            area.classList.add('completed');
+            document.getElementById('result-msg').style.color = "var(--correct-green)";
+            document.getElementById('result-msg').textContent = "Excellent! ✨";
+            btn.textContent = "Next →";
+            document.querySelector('.word-bank').style.display = "none";
+        } else {
+            document.getElementById('result-msg').style.color = "var(--wrong-red)";
+            document.getElementById('result-msg').textContent = "Incorrect order. Try again!";
+        }
+    }
+}
+
+// 印刷用データの生成
+function setupPrint() {
+    const page1 = document.getElementById('print-page-1');
+    const page2 = document.getElementById('print-page-2');
+    page1.innerHTML = ""; 
+    page2.innerHTML = "";
+
+    const createSection = (partKey, title) => {
+        let html = `<h2>${title}</h2>`;
+        quizData[partKey].forEach((q, i) => {
+            let hint = "";
+            if (q.options) {
+                const shuffledOpts = [...q.options].sort(() => Math.random() - 0.5);
+                hint = `[ ${shuffledOpts.join(" / ")} ]`;
+            } else if (q.words) {
+                const shuffledWords = [...q.words].sort(() => Math.random() - 0.5);
+                hint = `( ${shuffledWords.join(" / ")} )`;
+            }
+            html += `
+                <div class="print-item">
+                    <div>${i + 1}. ${q.jp || "_________________________________"}</div>
+                    <div class="print-en">${q.en.replace("<span class='blank'></span>", "________________")}</div>
+                    <div class="choices-hint">${hint}</div>
+                </div>
+            `;
+        });
+        return html;
+    };
+
+    page1.innerHTML = createSection('p1', 'Part 1: 基本') + createSection('p2', 'Part 2: 形容詞的用法');
+    page2.innerHTML = createSection('p3', 'Part 3: 第5文型(SVOC)') + createSection('p4', 'Part 4: Mix問題');
+}
+
+window.onload = loadQuestion;
+window.onbeforeprint = setupPrint;
+</script>
+
+</body>
+</html>
