@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>予想テスト 出題範囲 19章〜23章</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kosugi+Maru&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        :root {
+            --bg-navy: #f0f4f8;
+            --primary-navy: #1a365d;
+            --dark-navy: #102a43;
+            --accent-blue: #2b6cb0;
+            --text-black: #1a202c;
+            --white: #ffffff;
+            --wrong-red: #c53030;
+            --correct-green: #2f855a;
+            --border-gray: #e2e8f0;
+        }
+
+        body {
+            font-family: 'Kosugi Maru', serif;
+            background-color: var(--bg-navy);
+            color: var(--text-black);
+            margin: 0; padding: 20px;
+            display: flex; flex-direction: column; align-items: center;
+        }
+
+        .no-print { width: 100%; max-width: 850px; display: flex; flex-direction: column; align-items: center; }
+
+        header h1 {
+            color: var(--primary-navy);
+            font-size: 1.6rem;
+            margin-bottom: 25px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid var(--primary-navy);
+            width: 100%;
+            text-align: center;
+        }
+
+        .control-panel { display: flex; gap: 15px; margin-bottom: 25px; }
+        .tab-btn {
+            padding: 12px 30px; border-radius: 8px; border: 2px solid var(--primary-navy);
+            background: white; color: var(--primary-navy); cursor: pointer; font-weight: bold; transition: 0.3s;
+            font-size: 1rem;
+        }
+        .tab-btn.active { background: var(--primary-navy); color: white; }
+
+        .container {
+            background: var(--white); width: 100%;
+            padding: 40px; border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            box-sizing: border-box;
+        }
+
+        #progress { text-align: center; margin-bottom: 20px; font-weight: bold; color: var(--accent-blue); font-size: 1rem; }
+
+        /* 読解パッセージ用 */
+        .passage-box {
+            background: #f8fafc;
+            border: 1px solid var(--border-gray);
+            border-left: 6px solid var(--primary-navy);
+            padding: 25px;
+            margin-bottom: 30px;
+            font-size: 1.2rem;
+            line-height: 1.9;
+            font-family: 'Times New Roman', serif;
+            border-radius: 4px;
+        }
+
+        /* 問題文 */
+        .sentence { font-size: 1.35rem; margin-bottom: 35px; line-height: 1.7; text-align: left; }
+        .blank {
+            border-bottom: 2px solid var(--primary-navy);
+            min-width: 100px;
+            display: inline-block;
+            color: var(--primary-navy);
+            padding: 0 10px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        /* 選択肢：ご要望の2列(グリッド)レイアウト */
+        .choices-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* 2列固定 */
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .choice-btn {
+            text-align: left;
+            background: white;
+            border: 1px solid var(--border-gray);
+            padding: 18px 20px;
+            border-radius: 10px;
+            font-size: 1.15rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .choice-btn b { margin-right: 12px; color: var(--accent-blue); }
+
+        .choice-btn:hover {
+            background: #f1f5f9;
+            border-color: var(--accent-blue);
+            transform: translateY(-2px);
+        }
+
+        .choice-btn.correct { background: var(--correct-green); color: white; border-color: var(--correct-green); }
+        .choice-btn.correct b { color: white; }
+        .choice-btn.wrong { background: var(--wrong-red); color: white; border-color: var(--wrong-red); }
+        .choice-btn.wrong b { color: white; }
+
+        /* 解説 */
+        .explanation-box {
+            display: none;
+            font-size: 1.05rem;
+            color: var(--white);
+            background: var(--dark-navy);
+            padding: 25px;
+            border-radius: 10px;
+            margin-top: 30px;
+            line-height: 1.7;
+        }
+
+        .action-btn-container { text-align: center; width: 100%; margin-top: 30px; }
+        .action-btn {
+            background: var(--accent-blue);
+            color: white;
+            border: none;
+            padding: 14px 60px;
+            border-radius: 30px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            display: none;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        /* 注釈 */
+        .notes {
+            margin-top: 40px;
+            font-size: 0.95rem;
+            color: #4a5568;
+            border-top: 1px solid var(--border-gray);
+            padding-top: 20px;
+            line-height: 1.6;
+        }
+        .notes b { color: var(--primary-navy); margin-right: 5px; }
+
+        /* スマホ対応：非常に狭い画面のみ1列 */
+        @media (max-width: 600px) {
+            .choices-grid { grid-template-columns: 1fr; }
+            .container { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="no-print">
+    <header><h1>予想テスト 出題範囲 19章〜23章</h1></header>
+
+    <div class="control-panel">
+        <button id="btn-p1" class="tab-btn active" onclick="switchPart(1)">Part 1: 穴埋め問題</button>
+        <button id="btn-p2" class="tab-btn" onclick="switchPart(2)">Part 2: 読解問題</button>
+    </div>
+
+    <div class="container">
+        <div id="progress">Question 1 / 6</div>
+        <div id="passage-container" class="passage-box" style="display:none;"></div>
+        <div id="q-sentence" class="sentence"></div>
+        <div id="interactive-area" class="choices-grid"></div>
+        <div id="explanation" class="explanation-box"></div>
+        <div class="action-btn-container">
+            <button id="next-btn" class="action-btn" onclick="handleNext()">Next Question →</button>
+        </div>
+
+        <div id="vocab-notes" class="notes"></div>
+    </div>
+</div>
+
+<script>
+const quizData = {
+    p1: [
+        {
+            en: "A: I'm terribly sorry to keep you ( ) so long.<br>B: Well, maybe you should have at least called me to let me know you would be late.",
+            ans: "waiting",
+            options: ["to wait", "have waited", "waiting", "wait"],
+            exp: "<b>keep + O + 分詞</b>：'Oを〜の状態にさせておく'。あなたが待っている能動の状態なので現在分詞 waiting が適切です。第22章「SVOCと分詞」の内容です。",
+            notes: "terribly: 非常に / at least: 少なくとも"
+        },
+        {
+            en: "On the way to Miami, Antonio became acquainted with many people, ( ) were African-American.",
+            ans: "most of whom",
+            options: ["with whom", "on which", "whoever", "most of whom"],
+            exp: "<b>関係代名詞の非制限用法</b>：'many people' を先行詞とし、そのうちの大部分を指す 'most of whom' が正解です。第20章「関係代名詞」の応用です。",
+            notes: "become acquainted with: 〜と知り合いになる"
+        },
+        {
+            en: "Tim wanted to study abroad, so he began working part-time at the café ( ) in front of the post office.",
+            ans: "located",
+            options: ["to locate", "locate", "location", "located"],
+            exp: "<b>過去分詞の後置修飾</b>：caféは「位置されている」受動の関係なので、過去分詞 located を使います。第22章「分詞の後置修飾」の内容です。",
+            notes: "study abroad: 留学する / part-time: アルバイト"
+        },
+        {
+            en: "The children are ( ) after with care, so that childcare center is very popular among working mothers.",
+            ans: "looked",
+            options: ["looked", "looking", "looks", "to look"],
+            exp: "<b>群動詞の受動態</b>：'look after'（世話をする）を受動態にし、'be looked after'（世話をされる）となります。第22章の内容に関わります。",
+            notes: "with care: 注意深く / childcare center: 保育所"
+        },
+        {
+            en: "Ms. Morgan, ( ) impress people all over the world, was born into a poor family in 1956.",
+            ans: "whose works",
+            options: ["who works", "whose works", "who is working", "with whom he works"],
+            exp: "<b>所有格の関係代名詞</b>：Ms. Morganの'作品(works)'が主語となり、「その作品が〜」という所有の関係を示す whose を使います。第19章「関係代名詞」の内容です。",
+            notes: "impress: 感動させる / family: 家族"
+        },
+        {
+            en: "The new manager is very hard on his staff, so no one respects him, ( ) great his career may be.",
+            ans: "however",
+            options: ["whenever", "wherever", "whichever", "however"],
+            exp: "<b>複合関係副詞</b>：'however + 形容詞 + S + V' で「どんなに〜であっても」という譲歩を表します。第20章「複合関係詞」の内容です。",
+            notes: "be hard on: 〜につらく当たる / career: 経歴"
+        }
+    ],
+    p2: [
+        {
+            paragraph: "For a long time, a low-fat diet was essential to losing weight and to maintaining health. However, recent research has shown that fat is not as bad as was once thought. In fact, foods high in fats such as avocados and salmon are essential to our good health. Instead, ( 7 ) that carbohydrates such as rice, bread, and potatoes are the cause of obesity and heart disease.",
+            en: "空所( 7 )に入る最も適切なものを選びなさい。",
+            ans: "it is believed",
+            options: ["what is doubtful is", "recent research has denied", "few scientists think", "it is believed"],
+            exp: "<b>文脈判断</b>：かつての常識（脂肪が悪）が否定され、代わりに炭水化物が肥満の主因だと「現在では信じられている」という対比構造です。",
+            notes: "essential: 不可欠な / obesity: 肥満 / cause: 原因"
+        },
+        {
+            paragraph: "So, how do carbohydrates, instead of fats, make us fat? Carbohydrates or carbs cause the blood sugar level to rise, ( 8 ) to the production of the hormone insulin in order to reduce the sugar in our blood. Insulin's job is to take the sugar and store it as fat on parts of our body. Eat more carbs than our body can burn and we gain fat.",
+            en: "空所( 8 )に入る最も適切なものを選びなさい。",
+            ans: "which in turn leads",
+            options: ["which in turn leads", "where blood cells are made", "when your brain stops working", "that is then sent"],
+            exp: "<b>関係代名詞の非制限用法</b>：前の文全体（血糖値の上昇）を受けて、「それが今度は〜につながる」という結果を表します。第20章の内容です。",
+            notes: "blood sugar level: 血糖値 / production: 分泌・産出"
+        },
+        {
+            paragraph: "The solution, some say, is what is called a low-carb or no-carb diet in which foods high in starch such as rice, bread, and fruit are avoided in favor of meats, fish, and low-starch vegetables such as broccoli. The thinking goes that when carbohydrates are reduced, the body burns the fat ( 9 ) and weight-loss is achieved.",
+            en: "空所( 9 )に入る最も適切なものを選びなさい。",
+            ans: "already stored in the body",
+            options: ["necessary to stay healthy", "rapidly increasing in intensity", "controlled with care", "already stored in the body"],
+            exp: "<b>過去分詞の形容詞的用法</b>：fat（脂肪）を後ろから修飾し、「体内に既に蓄えられている」脂肪という意味を作ります。第22章の内容です。",
+            notes: "starch: でんぷん / achieved: 達成される"
+        }
+    ]
+};
+
+let currentPart = 1;
+let currentIdx = 0;
+
+function switchPart(num) {
+    currentPart = num;
+    currentIdx = 0;
+    document.getElementById('btn-p1').classList.toggle('active', num === 1);
+    document.getElementById('btn-p2').classList.toggle('active', num === 2);
+    loadQuestion();
+}
+
+function loadQuestion() {
+    const data = (currentPart === 1) ? quizData.p1[currentIdx] : quizData.p2[currentIdx];
+    const total = (currentPart === 1) ? quizData.p1.length : quizData.p2.length;
+    
+    document.getElementById('progress').textContent = `Question ${currentIdx + 1} / ${total}`;
+    document.getElementById('explanation').style.display = "none";
+    document.getElementById('next-btn').style.display = "none";
+    
+    const passageCont = document.getElementById('passage-container');
+    if (currentPart === 2) {
+        passageCont.style.display = "block";
+        passageCont.innerHTML = data.paragraph;
+    } else {
+        passageCont.style.display = "none";
+    }
+
+    const qSentence = document.getElementById('q-sentence');
+    qSentence.innerHTML = data.en.includes("( )") ? data.en.replace("( )", "<span class='blank'>?</span>") : data.en;
+
+    const area = document.getElementById('interactive-area');
+    area.innerHTML = "";
+    data.options.forEach((opt, i) => {
+        const btn = document.createElement('button');
+        btn.className = "choice-btn";
+        btn.innerHTML = `<b>${i + 1}</b> ${opt}`;
+        btn.onclick = () => checkAnswer(opt, btn);
+        area.appendChild(btn);
+    });
+
+    const notesArea = document.getElementById('vocab-notes');
+    notesArea.innerHTML = `<b>[注釈]:</b> ${data.notes}`;
+}
+
+function checkAnswer(selected, btn) {
+    const data = (currentPart === 1) ? quizData.p1[currentIdx] : quizData.p2[currentIdx];
+    const allBtns = document.querySelectorAll('.choice-btn');
+    
+    allBtns.forEach(b => b.disabled = true);
+
+    if (selected === data.ans) {
+        btn.classList.add('correct');
+        confetti({ 
+            particleCount: 150, 
+            spread: 80, 
+            origin: { y: 0.6 }, 
+            colors: ['#1a365d', '#2b6cb0', '#ffffff'] 
+        });
+    } else {
+        btn.classList.add('wrong');
+        allBtns.forEach(b => {
+            if (b.innerText.includes(data.ans)) b.classList.add('correct');
+        });
+    }
+
+    const exp = document.getElementById('explanation');
+    exp.innerHTML = `<strong>【解説】</strong><br>${data.exp}`;
+    exp.style.display = "block";
+    document.getElementById('next-btn').style.display = "inline-block";
+}
+
+function handleNext() {
+    currentIdx++;
+    const total = (currentPart === 1) ? quizData.p1.length : quizData.p2.length;
+    
+    if (currentIdx < total) {
+        loadQuestion();
+    } else {
+        alert("セクション終了！よく頑張りました。");
+        currentIdx = 0;
+        loadQuestion();
+    }
+}
+
+window.onload = loadQuestion;
+</script>
+</body>
+</html>
