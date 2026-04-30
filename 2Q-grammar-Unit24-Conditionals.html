@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>24章 仮定法 - 英検2級文法</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kosugi+Maru&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <style>
+        :root {
+            --bg-pink: #fff0f6;
+            --primary-pink: #ff80ab;
+            --dark-pink: #c94b7b;
+            --text-black: #2c3e50;
+            --white: #ffffff;
+            --correct-blue: #1e88e5;
+            --wrong-red: #ff5252;
+        }
+
+        body {
+            font-family: 'Kosugi Maru', sans-serif;
+            background-color: var(--bg-pink);
+            color: var(--text-black);
+            margin: 0; padding: 20px;
+            display: flex; flex-direction: column; align-items: center;
+        }
+
+        .no-print { width: 100%; max-width: 850px; display: flex; flex-direction: column; align-items: center; }
+
+        .control-panel { display: flex; gap: 10px; margin-bottom: 20px; }
+        .tab-btn {
+            padding: 12px 25px; border-radius: 25px; border: 2px solid var(--primary-pink);
+            background: white; color: var(--dark-pink); cursor: pointer; font-weight: bold; transition: 0.3s;
+        }
+        .tab-btn.active { background: var(--primary-pink); color: white; }
+
+        .container {
+            background: var(--white); width: 100%;
+            padding: 40px; border-radius: 25px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: left;
+            box-sizing: border-box;
+        }
+
+        #progress { text-align: center; margin-bottom: 15px; font-weight: bold; color: var(--dark-pink); }
+        .translation { font-size: 1.1rem; color: #555; margin-bottom: 15px; font-weight: bold; }
+        
+        /* 英文エリアの設定 */
+        .sentence { font-size: 1.4rem; margin-bottom: 30px; line-height: 1.6; }
+        /* 穴埋めの「？」を中央寄せにするためのコンテナ */
+        .q-wrapper { display: flex; justify-content: center; width: 100%; margin: 20px 0; }
+        .blank { border-bottom: 2px solid var(--dark-pink); min-width: 100px; display: inline-block; color: var(--dark-pink); padding: 0 10px; font-weight: bold; text-align: center; }
+
+        .choices-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; text-align: center; }
+        .choice-btn {
+            background: white; border: 2px solid #ffc1e3; padding: 15px;
+            border-radius: 15px; font-size: 1.1rem; cursor: pointer; transition: 0.2s; font-family: inherit;
+        }
+        .choice-btn:hover { background: #fff1f8; }
+
+        /* 並べ替えエリア */
+        .sortable-area { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 20px; min-height: 80px; border: 2px dashed var(--primary-pink); padding: 20px; border-radius: 15px; background: #fff9fb; }
+        .word-bank { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; min-height: 50px; }
+        .word-chip { background: white; border: 2px solid var(--primary-pink); color: var(--dark-pink); padding: 8px 15px; border-radius: 10px; cursor: grab; font-weight: bold; transition: background 0.2s; font-size: 1rem; user-select: none; }
+        .word-chip:active { cursor: grabbing; }
+        .sortable-ghost { opacity: 0.4; background: var(--primary-pink) !important; }
+
+        .explanation-box { 
+            display: none; font-size: 1rem; color: var(--correct-blue); 
+            background: #e3f2fd; padding: 20px; border-radius: 12px;
+            margin-top: 25px; line-height: 1.6; border-left: 5px solid var(--correct-blue);
+        }
+
+        .action-btn-container { text-align: center; width: 100%; }
+        .action-btn {
+            background: var(--dark-pink); color: white; border: none;
+            padding: 12px 40px; border-radius: 35px; font-size: 1.1rem;
+            cursor: pointer; margin-top: 20px; display: none;
+        }
+
+        mark { background: none; color: var(--dark-pink); text-decoration: underline; font-weight: bold; }
+
+        /* --- 印刷用スタイル --- */
+        #print-area { display: none; }
+
+        @media print {
+            body { background: white; padding: 0; font-family: 'Kosugi Maru', sans-serif; }
+            .no-print { display: none; }
+            #print-area { display: block; width: 100%; color: black; }
+            h1 { font-size: 18pt; text-align: center; border-bottom: 2px solid black; padding-bottom: 8px; margin-bottom: 25px; }
+            .print-section { margin-bottom: 35px; }
+            .print-section-title { font-size: 13pt; font-weight: bold; margin-bottom: 12px; }
+            .print-item { margin-bottom: 22px; page-break-inside: avoid; }
+            .print-q-text { font-size: 11pt; margin-bottom: 6px; line-height: 1.4; }
+            .print-choices { display: flex; gap: 15px; margin-left: 15px; font-size: 10.5pt; margin-top: 5px; }
+            .print-sort-box { border: none; padding: 5px 0; margin-top: 5px; font-size: 9.5pt; color: #333; }
+            .print-underline { border-bottom: 1px solid #000; height: 28px; margin-top: 8px; }
+            @page { size: A4; margin: 15mm; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="no-print">
+    <header><h1 style="color: var(--dark-pink);">24章 仮定法</h1></header>
+
+    <div class="control-panel">
+        <button class="tab-btn active" onclick="switchPart(1)">Part 1: 穴埋め</button>
+        <button class="tab-btn" onclick="switchPart(2)">Part 2: 並べ替え</button>
+    </div>
+
+    <div class="container">
+        <div id="progress">Question 1</div>
+        <div id="q-trans" class="translation"></div>
+        <div id="q-sentence-container">
+            <div id="q-sentence-p1" class="q-wrapper" style="display:none;"></div>
+            <div id="q-sentence-p2" class="sentence" style="display:none;"></div>
+        </div>
+        <div id="interactive-area"></div>
+        <div id="explanation" class="explanation-box"></div>
+        <div class="action-btn-container">
+            <button id="next-btn" class="action-btn" onclick="handleNext()">Next →</button>
+        </div>
+    </div>
+</div>
+
+<div id="print-area">
+    <h1>24章 仮定法</h1>
+    <div class="print-section">
+        <div class="print-section-title">1. 次の英文の( )内に入れるのに最も適切なものを1つ選びなさい。</div>
+        <div id="p1-print-content"></div>
+    </div>
+    <div class="print-section">
+        <div class="print-section-title">2. 日本文の意味に合うように、( )内の語句を正しく並べ替えなさい。</div>
+        <div id="p2-print-content"></div>
+    </div>
+</div>
+
+<script>
+const quizData = {
+    p1: [
+        { jp: "もし私が十分な資金を持っていれば、そのスタートアップに投資するのだが。", en: "If I ( ) enough money, I would invest in that promising startup.", ans: "had", options: ["have", "had", "had had", "would have"], exp: "【仮定法過去】現在の事実に反する仮定。if節は過去形。" },
+        { jp: "もし昨日、彼女が最後の質問に答えられていたら、優勝していただろうに。", en: "Jane would have been the winner if she ( ) able to answer the final question yesterday.", ans: "had been", options: ["was", "is", "had been", "were"], exp: "【仮定法過去完了】過去の事実に反する仮定。if節は had + 過去分詞。" },
+        { jp: "もっと早く願書を提出しておけばよかったなあ。", en: "I wish I ( ) the application earlier.", ans: "had submitted", options: ["submit", "submitted", "had submitted", "would submit"], exp: "【I wish + 過去完了】「あの時〜していればよかった」という過去の後悔。" },
+        { jp: "マネージャーは詳細なマニュアルを用意した。さもなければ、新人たちは混乱していただろう。", en: "The manager prepared a manual; ( ), the new employees would have been confused.", ans: "otherwise", options: ["as a result", "otherwise", "nevertheless", "therefore"], exp: "【otherwise】「さもなければ」。if節の代用。" },
+        { jp: "万が一、政府が再び増税するようなことがあれば、多くの市民が激しく抗議するだろう。", en: "If the government ( ) to raise taxes again, many citizens would protest.", ans: "were", options: ["was", "is", "were", "should"], exp: "【were to do】未来の極めて低い可能性の仮定。" },
+        { jp: "もし彼が約束を破らなかったら、ナンシーは彼と別れなかっただろうに。", en: "Nancy wouldn't have split with him if he ( ) his promise.", ans: "hadn't broken", options: ["didn't break", "hasn't broken", "hadn't broken", "wouldn't break"], exp: "【仮定法過去完了】過去の事実に反する想定。" },
+        { jp: "まるで彼はそのプロジェクトについて何でも知っているかのように話す。", en: "He speaks as ( ) he knew everything about the project.", ans: "if", options: ["if", "like", "so", "as"], exp: "【as if + 過去形】「まるで〜であるかのように」。" },
+        { jp: "あの時十分な時間があったら、その提案を受け入れていただろうに。", en: "If I ( ) enough time then, I would have accepted the proposal.", ans: "had had", options: ["had", "have had", "had had", "would have"], exp: "【仮定法過去完了】thenがあるため過去の仮定。" },
+        { jp: "今の仕事がそんなに忙しくなければ、ボランティア活動に参加できるのだが。", en: "If my current job ( ) so busy, I could participate in volunteer activities.", ans: "were not", options: ["is not", "was not", "were not", "had not been"], exp: "【仮定法過去】現在の反対。be動詞は were が標準。" },
+        { jp: "もし太陽が西から昇るようなことがあっても、私の決心は変わらない。", en: "Even if the sun ( ) to rise in the west, I would not change my mind.", ans: "were", options: ["was", "were", "is", "would"], exp: "【were to do】強い仮定。" }
+    ],
+    p2: [
+        {
+            jp: "もしあなたの助けが（今）なければ、このプロジェクトは成功しないだろう。",
+            ans: "If it were not for your help , this project would not be a success .",
+            words: ["If", "it", "were", "not", "for", "your", "help", ",", "this", "project", "would", "not", "be", "a", "success", "."],
+            exp: "【If it were not for ~】「今〜がなければ」。"
+        },
+        {
+            jp: "もっと注意深く環境に配慮していれば、その問題は避けられたはずだ。",
+            ans: "We could have avoided the problem if we had been more careful about the environment .",
+            words: ["We", "could", "have", "avoided", "the", "problem", "if", "we", "had", "been", "more", "careful", "about", "the", "environment", "."],
+            exp: "【仮定法過去完了】過去の回避できた可能性。"
+        },
+        {
+            jp: "すぐに医者に診てもらっていたら、彼は今ごろ元気だろうに。",
+            ans: "If he had seen a doctor immediately , he would be well now .",
+            words: ["If", "he", "had", "seen", "a", "doctor", "immediately", ",", "he", "would", "be", "well", "now", "."],
+            exp: "【混合型】過去の仮定 ＋ 現在の結果。"
+        },
+        {
+            jp: "彼女はまるで以前に私に会ったことがあるかのように私に微笑みかけた。",
+            ans: "She smiled at me as if she had met me before .",
+            words: ["She", "smiled", "at", "me", "as", "if", "she", "had", "met", "me", "before", "."],
+            exp: "【as if + 過去完了】微笑んだ時点より前を仮定。"
+        },
+        {
+            jp: "マネージャーは詳細なマニュアルを用意した。さもなければ、新人たちは混乱していただろう。",
+            ans: "The manager prepared a manual ; otherwise , the new employees would have been confused .",
+            words: ["The", "manager", "prepared", "a", "manual", ";", "otherwise", ",", "the", "new", "employees", "would", "have", "been", "confused", "."],
+            exp: "【otherwise】「さもなければ」。"
+        },
+        {
+            jp: "万が一私の助けが必要なら、遠慮なく知らせてください。",
+            ans: "If you should need my help , please let me know .",
+            words: ["If", "you", "should", "need", "my", "help", ",", "please", "let", "me", "know", "."],
+            exp: "【If ... should do】未来の可能性が低い仮定。"
+        }
+    ]
+};
+
+let currentPartNum = 1;
+let currentIdx = 0;
+let sortableInstance = null;
+
+function switchPart(num) {
+    currentPartNum = num;
+    currentIdx = 0;
+    document.querySelectorAll('.tab-btn').forEach((btn, i) => btn.classList.toggle('active', i === num - 1));
+    loadQuestion();
+}
+
+function loadQuestion() {
+    const partKey = 'p' + currentPartNum;
+    const data = quizData[partKey][currentIdx];
+    const area = document.getElementById('interactive-area');
+    const p1Container = document.getElementById('q-sentence-p1');
+    const p2Container = document.getElementById('q-sentence-p2');
+    
+    document.getElementById('progress').textContent = `Part ${currentPartNum} - Q ${currentIdx + 1} / ${quizData[partKey].length}`;
+    document.getElementById('q-trans').textContent = data.jp;
+    document.getElementById('explanation').style.display = "none";
+    document.getElementById('next-btn').style.display = "none";
+    
+    area.innerHTML = "";
+    if (currentPartNum === 1) {
+        p1Container.style.display = "flex";
+        p2Container.style.display = "none";
+        p1Container.innerHTML = `<span class='sentence'>${data.en.replace("( )", "<span class='blank'>?</span>")}</span>`;
+        
+        const grid = document.createElement('div');
+        grid.className = "choices-grid";
+        const shuffledOptions = [...data.options].sort(() => Math.random() - 0.5);
+        shuffledOptions.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.className = "choice-btn";
+            btn.textContent = opt;
+            btn.onclick = () => {
+                if(opt === data.ans){
+                    confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
+                    p1Container.querySelector('.blank').textContent = opt;
+                    showResult();
+                } else { btn.style.borderColor = "var(--wrong-red)"; btn.style.color = "var(--wrong-red)"; }
+            };
+            grid.appendChild(btn);
+        });
+        area.appendChild(grid);
+    } else {
+        p1Container.style.display = "none";
+        p2Container.style.display = "block";
+        p2Container.innerHTML = "<span class='blank'>......</span>";
+        
+        const sortArea = document.createElement('div');
+        sortArea.className = "sortable-area";
+        sortArea.id = "answer-zone";
+        area.appendChild(sortArea);
+        
+        const bank = document.createElement('div');
+        bank.className = "word-bank";
+        bank.id = "word-bank";
+        area.appendChild(bank);
+
+        [...data.words].sort(() => Math.random() - 0.5).forEach((w) => {
+            const chip = document.createElement('div');
+            chip.className = "word-chip";
+            chip.textContent = w;
+            chip.onclick = () => {
+                if (chip.parentNode === bank) sortArea.appendChild(chip);
+                else bank.appendChild(chip);
+                checkSort();
+            };
+            bank.appendChild(chip);
+        });
+
+        const sortOptions = {
+            group: 'shared',
+            animation: 200,
+            ghostClass: 'sortable-ghost',
+            onEnd: checkSort
+        };
+        Sortable.create(bank, sortOptions);
+        sortableInstance = Sortable.create(sortArea, sortOptions);
+    }
+}
+
+function checkSort() {
+    const data = quizData.p2[currentIdx];
+    const sortArea = document.getElementById('answer-zone');
+    const userAns = Array.from(sortArea.children).map(c => c.textContent).join(" ");
+    
+    if (userAns === data.ans) {
+        confetti({ particleCount: 100, spread: 100 });
+        document.getElementById('q-sentence-p2').innerHTML = `<mark>${data.ans}</mark>`;
+        document.getElementById('interactive-area').innerHTML = ""; 
+        showResult();
+    }
+}
+
+function showResult() {
+    const data = quizData['p' + currentPartNum][currentIdx];
+    const exp = document.getElementById('explanation');
+    exp.innerHTML = `<strong>正解！</strong><br>${data.exp}`;
+    exp.style.display = "block";
+    document.getElementById('next-btn').style.display = "inline-block";
+}
+
+function handleNext() {
+    currentIdx++;
+    if (currentIdx < quizData['p' + currentPartNum].length) loadQuestion();
+    else alert("お疲れ様でした！このパートは完了です。");
+}
+
+function setupPrint() {
+    const p1Area = document.getElementById('p1-print-content');
+    p1Area.innerHTML = quizData.p1.map((q, i) => `
+        <div class="print-item">
+            <div class="print-q-text">${i+1}. ${q.en}</div>
+            <div class="print-choices">${[...q.options].sort(()=>Math.random()-0.5).map((o, idx) => `(${idx+1}) ${o}`).join('　')}</div>
+        </div>
+    `).join('');
+
+    const p2Area = document.getElementById('p2-print-content');
+    p2Area.innerHTML = quizData.p2.map((q, i) => `
+        <div class="print-item">
+            <div class="print-q-text">${i+1}. ${q.jp}</div>
+            <div class="print-sort-box">( ${[...q.words].sort(()=>Math.random()-0.5).join(' / ')} )</div>
+            <div class="print-underline"></div>
+        </div>
+    `).join('');
+}
+
+window.onbeforeprint = setupPrint;
+window.onload = loadQuestion;
+</script>
+</body>
+</html>
